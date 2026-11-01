@@ -112,5 +112,41 @@
             </div>
         </div>
     </div>
+    <div class="mb-3">
+    <label class="form-label">Firma del Responsable:</label><br>
+    <canvas id="pizarra" width="400" height="200" style="border: 2px solid #ccc; border-radius: 8px; background: white;"></canvas>
+    <br>
+    <button type="button" class="btn btn-sm btn-secondary mt-2" onclick="limpiarFirma()">Limpiar Firma</button>
+</div>
+<input type="hidden" name="firma_digital" id="input_firma">
+
+<script>
+    const canvas = document.getElementById('pizarra');
+    const ctx = canvas.getContext('2d');
+    let dibujando = false;
+
+    canvas.addEventListener('mousedown', () => dibujando = true);
+    canvas.addEventListener('mouseup', () => {
+        dibujando = false;
+        ctx.beginPath();
+        document.getElementById('input_firma').value = canvas.toDataURL();
+    });
+    canvas.addEventListener('mousemove', draw);
+
+    function draw(e) {
+        if (!dibujando) return;
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineTo(e.offsetX, e.offsetY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(e.offsetX, e.offsetY);
+    }
+
+    function limpiarFirma() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        document.getElementById('input_firma').value = '';
+    }
+</script>
 </body>
 </html>

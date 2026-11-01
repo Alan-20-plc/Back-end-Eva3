@@ -38,6 +38,17 @@ def logout_usuario(request):
     messages.info(request, "Has cerrado sesión de forma segura.")
     return redirect('login')
 
+def verificar_morosos():
+    # Busca préstamos vencidos que sigan activos
+    prestamos_vencidos = Prestamo.objects.filter(
+        fecha_esperada_devolucion__lt=date.today(),
+        estado='En Uso' 
+    )
+    for prestamo in prestamos_vencidos:
+        contratista = prestamo.contratista
+        contratista.bloqueado_por_morosidad = True
+        contratista.save()
+
 # --- DASHBOARD Y LÓGICA DE NEGOCIO ---
 
 @login_required(login_url='login')

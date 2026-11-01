@@ -8,6 +8,7 @@ class Contratista(models.Model):
     telefono = models.CharField(max_length=15)
     # Fundamental para el requerimiento: "bloqueo automático de contratistas morosos"
     bloqueado_por_morosidad = models.BooleanField(default=False) 
+    bloqueado_por_morosidad = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.nombre_completo} - {self.empresa}"
@@ -36,6 +37,7 @@ class Prestamo(models.Model):
     fecha_entrega = models.DateField(default=timezone.now)
     fecha_devolucion_esperada = models.DateField()
     fecha_devolucion_real = models.DateField(null=True, blank=True)
+    firma_digital = models.TextField(blank=True, null=True)
     
     # Requerimiento: Módulo de entrega/devolución con firma digital
     firma_digital_entrega = models.BooleanField(default=False, help_text="Firmado al entregar")
