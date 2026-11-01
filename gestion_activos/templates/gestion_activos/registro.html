@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - BuildCorp Enterprise</title>
+    <!-- Usamos Bootstrap para un diseño rápido, responsivo y elegante -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f6f9; /* Fondo gris claro corporativo */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        /* Cabecera idéntica a tu dashboard */
+        .header-top {
+            background-color: #0b1b2a; 
+            color: white;
+            padding: 15px 30px;
+            border-bottom: 4px solid #f39c12; /* Acento naranja */
+        }
+        .brand-text {
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: 0.5px;
+        }
+        .brand-orange {
+            color: #f39c12;
+        }
+        /* Estilos de la tarjeta de registro */
+        .card-registro {
+            max-width: 450px;
+            margin: 60px auto;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        }
+        .card-header-custom {
+            background-color: #ffffff;
+            border-bottom: 1px solid #edf2f9;
+            padding: 25px 25px 15px 25px;
+            text-align: center;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+        .btn-primary-custom {
+            background-color: #0b1b2a;
+            border-color: #0b1b2a;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            padding: 12px;
+        }
+        .btn-primary-custom:hover {
+            background-color: #15324d;
+            border-color: #15324d;
+        }
+        .form-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #6c757d;
+            letter-spacing: 0.5px;
+        }
+        .form-control {
+            padding: 10px 15px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Barra superior BuildCorp -->
+    <div class="header-top shadow-sm">
+        <span class="brand-text">Build<span class="brand-orange">Corp</span> Enterprise</span>
+    </div>
+
+    <!-- Contenedor del Formulario -->
+    <div class="container">
+        <div class="card card-registro">
+            <div class="card-header-custom">
+                <h4 class="fw-bold" style="color: #0b1b2a;">Crear Cuenta</h4>
+                <p class="text-muted small mb-0 mt-1">Ingresa tus datos para unirte a la plataforma</p>
+            </div>
+            <div class="card-body p-4">
+                
+                <!-- El formulario apunta a tu vista de registro y tiene el token de seguridad obligatorio de Django -->
+                <form method="POST" action="{% url 'registro' %}">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="username" class="form-label">NOMBRE DE USUARIO</label>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Ej: admin_obras" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">CORREO ELECTRÓNICO</label>
+                        <input type="email" class="form-control" id="email" name="email" placeholder="correo@empresa.com" required>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="password" class="form-label">CONTRASEÑA</label>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="••••••••" required>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary-custom btn-lg text-white">Registrarse</button>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <span class="text-muted small">¿Ya tienes una cuenta?</span> 
+                        <a href="{% url 'login' %}" class="text-decoration-none fw-bold" style="color: #f39c12;">Iniciar Sesión</a>
+                    </div>
+                </form>
+                
+            </div>
+        </div>
+    </div>
+</body>
+</html>

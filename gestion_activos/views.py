@@ -1,3 +1,4 @@
+from django.shortcuts import render, redirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import transaction
@@ -6,21 +7,21 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from datetime import date
 from .models import Herramienta, Prestamo, Contratista, Mantenimiento
+from django.contrib.auth.models import User
 
 # --- SISTEMA DE AUTENTICACIÓN ---
 
 def registro_usuario(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            usuario = form.save()
-            login(request, usuario)
-            messages.success(request, f"Cuenta creada exitosamente. Bienvenido a BuildCorp, {usuario.username}.")
-            return redirect('dashboard')
-    else:
-        form = UserCreationForm()
-    return render(request, 'gestion_activos/registro.html', {'form': form})
-
+        nombre_usuario = request.POST.get('username')
+        correo = request.POST.get('email')
+        contrasena = request.POST.get('password')
+        
+        if nombre_usuario and correo and contrasena:
+            User.objects.create_user(username=nombre_usuario, email=correo, password=contrasena)
+            return redirect('login')
+            
+    return render(request, 'gestion_activos/registro.html')
 def login_usuario(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
@@ -109,3 +110,48 @@ def dashboard(request):
         'mantenimientos': Mantenimiento.objects.all().order_by('proxima_fecha_preventiva'),
     }
     return render(request, 'gestion_activos/dashboard.html', context)
+def inventario_view(request):
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre')
+        if nombre:
+            Herramienta.objects.create(nombre=nombre)
+        return redirect('inventario')
+        
+    herramientas = Herramienta.objects.all()
+    return render(request, 'gestion_activos/inventario.html', {'herramientas': herramientas})
+
+def personal_view(request):
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre')
+        if nombre:
+            Contratista.objects.create(nombre=nombre)
+        return redirect('personal')
+        
+    contratistas = Contratista.objects.all()
+    return render(request, 'gestion_activos/personal.html', {'contratistas': contratistas})
+
+def mantenimientos_view(request):
+    # 1. Si el administrador hace clic en "Guardar Registro" en la ventana emergente
+    if request.method == 'POST':
+        herramienta_id = request.POST.get('herramienta_id')
+        fecha = request.POST.get('fecha_programada')
+        
+        # Busca la herramienta en la BD y crea el mantenimiento
+        herramienta = Herramienta.objects.get(id=herramienta_id)
+        Mantenimiento.objects.create(
+            herramienta=herramienta,
+            fecha_programada=fecha
+        )
+        return redirect('mantenimientos') # Recarga la página para mostrar el nuevo dato
+
+    # 2. Si solo está visitando la página (Carga normal)
+    mantenimientos = Mantenimiento.objects.all()
+    herramientas = Herramienta.objects.all() # Lo enviamos para llenar el menú desplegable
+    return render(request, 'gestion_activos/mantenimientos.html', {
+        'mantenimientos': mantenimientos,
+        'herramientas': herramientas
+    })
+
+def reportes_view(request):
+    prestamos = Prestamo.objects.all()
+    return render(request, 'gestion_activos/reportes.html', {'prestamos': prestamos})
