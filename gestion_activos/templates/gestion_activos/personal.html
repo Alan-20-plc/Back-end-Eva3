@@ -66,15 +66,18 @@
                 <div class="main-card-header">
                     <span><i class="bi bi-person-badge-fill me-2 text-primary"></i> LISTADO DE CONTRATISTAS</span>
                     <button type="button" class="btn btn-sm btn-dark" data-bs-toggle="modal" data-bs-target="#modalPersonal">
-    <i class="bi bi-person-plus-fill"></i> Nuevo Registro
-</button>
+                        <i class="bi bi-person-plus-fill"></i> Nuevo Registro
+                    </button>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-custom table-hover mb-0">
                         <thead>
                             <tr>
                                 <th>ID</th>
+                                <th>RUT</th>
                                 <th>Nombre Completo</th>
+                                <th>Empresa</th>
+                                <th>Teléfono</th>
                                 <th>Estado</th>
                                 <th>Acciones</th>
                             </tr>
@@ -83,15 +86,24 @@
                             {% for contratista in contratistas %}
                             <tr>
                                 <td class="fw-bold text-muted">#{{ contratista.id }}</td>
-                                <td class="fw-bold">{{ contratista.nombre }}</td>
-                                <td><span class="badge bg-success">Activo en Obra</span></td>
+                                <td>{{ contratista.rut }}</td>
+                                <td class="fw-bold">{{ contratista.nombre_completo }}</td>
+                                <td>{{ contratista.empresa }}</td>
+                                <td>{{ contratista.telefono }}</td>
+                                <td>
+                                    {% if contratista.bloqueado_por_morosidad %}
+                                        <span class="badge bg-danger">Bloqueado (Moroso)</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Activo en Obra</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></button>
                                 </td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="4" class="text-center py-5 text-muted">
+                                <td colspan="7" class="text-center py-5 text-muted">
                                     <i class="bi bi-people fs-1 d-block mb-3 text-secondary"></i>
                                     <h5>Sin personal registrado</h5>
                                     <p class="mb-0">Aún no has agregado contratistas a la base de datos.</p>
@@ -105,6 +117,7 @@
         </div>
     </div>
 </div>
+
 <!-- MODAL NUEVO CONTRATISTA -->
 <div class="modal fade" id="modalPersonal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -117,8 +130,20 @@
                 {% csrf_token %}
                 <div class="modal-body p-4">
                     <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small">RUT</label>
+                        <input type="text" name="rut" class="form-control" placeholder="Ej: 12.345.678-9" required>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label fw-bold text-muted small">NOMBRE COMPLETO</label>
-                        <input type="text" name="nombre" class="form-control" placeholder="Ej: Juan Pérez" required>
+                        <input type="text" name="nombre_completo" class="form-control" placeholder="Ej: Juan Pérez" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small">EMPRESA</label>
+                        <input type="text" name="empresa" class="form-control" placeholder="Ej: Constructora SPA" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small">TELÉFONO</label>
+                        <input type="text" name="telefono" class="form-control" placeholder="Ej: +56912345678" required>
                     </div>
                 </div>
                 <div class="modal-footer bg-light">

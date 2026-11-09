@@ -1,10 +1,9 @@
-from django.shortcuts import render, redirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import transaction
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, logout
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm
 from datetime import date
 from .models import Herramienta, Prestamo, Contratista, Mantenimiento
 from django.contrib.auth.models import User
@@ -22,6 +21,7 @@ def registro_usuario(request):
             return redirect('login')
             
     return render(request, 'gestion_activos/registro.html')
+
 def login_usuario(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
@@ -41,8 +41,8 @@ def logout_usuario(request):
 def verificar_morosos():
     # Busca préstamos vencidos que sigan activos
     prestamos_vencidos = Prestamo.objects.filter(
-        fecha_esperada_devolucion__lt=date.today(),
-        estado='En Uso' 
+        fecha_devolucion_esperada__lt=date.today(),
+        fecha_devolucion_real__isnull=True
     )
     for prestamo in prestamos_vencidos:
         contratista = prestamo.contratista
@@ -53,7 +53,9 @@ def verificar_morosos():
 
 @login_required(login_url='login')
 def dashboard(request):
-    # SEGURIDAD: Si alguien intenta hacer un POST (prestar/devolver) y NO es administrador
+    verificar_morosos()
+    
+    # SEGURIDAD: Si alguien intenta hacer un POST y NO es administrador
     if request.method == 'POST' and not request.user.is_staff:
         messages.error(request, "ACCESO DENEGADO: Solo el personal administrativo puede registrar movimientos.")
         return redirect('dashboard')
@@ -69,7 +71,7 @@ def dashboard(request):
         herramienta = get_object_or_404(Herramienta, id=herramienta_id)
 
         if contratista.bloqueado_por_morosidad:
-            messages.error(request, f"DENEGADO: {contratista.nombre_completo} está bloqueado.")
+            messages.error(request, f"DENEGADO: {contratista.nombre_completo} está bloqueado por morosidad.")
         elif herramienta.estado != 'DISPONIBLE':
             messages.error(request, "DENEGADO: La herramienta no está disponible.")
         elif not firma_ok:
@@ -77,8 +79,10 @@ def dashboard(request):
         else:
             with transaction.atomic():
                 Prestamo.objects.create(
-                    herramienta=herramienta, contratista=contratista,
-                    fecha_devolucion_esperada=fecha_esperada, firma_digital_entrega=firma_ok
+                    herramienta=herramienta, 
+                    contratista=contratista,
+                    fecha_devolucion_esperada=fecha_esperada, 
+                    firma_digital_entrega=firma_ok
                 )
                 herramienta.estado = 'EN_USO'
                 herramienta.save()
@@ -118,14 +122,20 @@ def dashboard(request):
         'herramientas': Herramienta.objects.all(),
         'prestamos_activos': Prestamo.objects.filter(fecha_devolucion_real__isnull=True),
         'contratistas': Contratista.objects.all(),
-        'mantenimientos': Mantenimiento.objects.all().order_by('proxima_fecha_preventiva'),
+        'mantenimientos': Mantenimiento.objects.all(),
     }
     return render(request, 'gestion_activos/dashboard.html', context)
+
 def inventario_view(request):
     if request.method == 'POST':
         nombre = request.POST.get('nombre')
-        if nombre:
-            Herramienta.objects.create(nombre=nombre)
+        codigo_inventario = request.POST.get('codigo_inventario')
+        if nombre and codigo_inventario:
+            Herramienta.objects.create(
+                nombre=nombre, 
+                codigo_inventario=codigo_inventario
+            )
+            messages.success(request, "Herramienta registrada exitosamente.")
         return redirect('inventario')
         
     herramientas = Herramienta.objects.all()
@@ -133,31 +143,42 @@ def inventario_view(request):
 
 def personal_view(request):
     if request.method == 'POST':
-        nombre = request.POST.get('nombre')
-        if nombre:
-            Contratista.objects.create(nombre=nombre)
+        rut = request.POST.get('rut')
+        nombre_completo = request.POST.get('nombre_completo')
+        empresa = request.POST.get('empresa', 'Particular')
+        telefono = request.POST.get('telefono', '')
+        
+        if rut and nombre_completo:
+            Contratista.objects.create(
+                rut=rut,
+                nombre_completo=nombre_completo,
+                empresa=empresa,
+                telefono=telefono
+            )
+            messages.success(request, "Contratista registrado exitosamente.")
         return redirect('personal')
         
     contratistas = Contratista.objects.all()
     return render(request, 'gestion_activos/personal.html', {'contratistas': contratistas})
 
 def mantenimientos_view(request):
-    # 1. Si el administrador hace clic en "Guardar Registro" en la ventana emergente
     if request.method == 'POST':
         herramienta_id = request.POST.get('herramienta_id')
         fecha = request.POST.get('fecha_programada')
         
-        # Busca la herramienta en la BD y crea el mantenimiento
-        herramienta = Herramienta.objects.get(id=herramienta_id)
-        Mantenimiento.objects.create(
-            herramienta=herramienta,
-            fecha_programada=fecha
-        )
-        return redirect('mantenimientos') # Recarga la página para mostrar el nuevo dato
+        if herramienta_id and fecha:
+            herramienta = get_object_or_404(Herramienta, id=herramienta_id)
+            Mantenimiento.objects.create(
+                herramienta=herramienta,
+                fecha_inicio=date.today(),
+                descripcion_falla="Mantenimiento preventivo programado",
+                proxima_fecha_preventiva=fecha
+            )
+            messages.success(request, "Mantenimiento agendado correctamente.")
+        return redirect('mantenimientos')
 
-    # 2. Si solo está visitando la página (Carga normal)
     mantenimientos = Mantenimiento.objects.all()
-    herramientas = Herramienta.objects.all() # Lo enviamos para llenar el menú desplegable
+    herramientas = Herramienta.objects.all()
     return render(request, 'gestion_activos/mantenimientos.html', {
         'mantenimientos': mantenimientos,
         'herramientas': herramientas
